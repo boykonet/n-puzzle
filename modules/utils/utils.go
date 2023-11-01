@@ -8,3 +8,12 @@ func Duplicate2Darray[T int](data [][]T) [][]T {
 	}
 	return duplicate
 }
+
+func Swap[T int](first *T, second *T) {
+	if first == nil || second == nil {
+		return
+	}
+	tmp := *first
+	*first = *second
+	*second = tmp
+}
