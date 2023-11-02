@@ -1,16 +1,16 @@
 package puzzlesolver
 
-import (
-	"n-puzzle/modules/utils"
-)
-
 type solver struct {
-	data [][]int
+	Data   [][]int
+	Open   [][]int
+	Closed [][]int
 }
 
-func NewPuzzleSolver(data [][]int) IPuzzleSolver {
+func NewPuzzleSolver(data [][]int, open, closed [][]int) IPuzzleSolver {
 	return &solver{
-		data: utils.Duplicate2Darray[int](data),
+		Data:   data,
+		Open:   open,
+		Closed: closed,
 	}
 }
 

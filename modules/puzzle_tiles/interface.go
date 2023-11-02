@@ -1,5 +1,5 @@
 package puzzletiles
 
 type IPuzzleTiles interface {
-	GenerateChild() ([][][]int, error)
+	GenerateChild() ([]IPuzzleTiles, error)
 }

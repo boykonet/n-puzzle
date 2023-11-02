@@ -34,15 +34,20 @@ func (t *tiles) getValidNeighboursIndexes(i, j int) [][]int {
 	}([][]int{{i - 1, j}, {i + 1, j}, {i, j - 1}, {i, j + 1}})
 }
 
-func (t *tiles) GenerateChild() ([][][]int, error) {
-	children := make([][][]int, 0, 4)
+func (t *tiles) GenerateChild() ([]IPuzzleTiles, error) {
+	children := make([]IPuzzleTiles, 0, 4)
 	i, j, err := t.findCoordinates('_')
 	if err != nil {
 		return nil, err
 	}
 	neighbours := t.getValidNeighboursIndexes(i, j)
 	for _, neighbour := range neighbours {
-		children = append(children, t.generateNewChild(i, j, neighbour[0], neighbour[1]))
+		children = append(children, &tiles{
+			PuzzleData: t.generateNewChild(i, j, neighbour[0], neighbour[1]),
+			PuzzleSize: t.PuzzleSize,
+			Level:      t.Level + 1,
+			Fval:       0,
+		})
 	}
 	return children, nil
 }
