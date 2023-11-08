@@ -2,72 +2,68 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"n-puzzle/modules/utils"
+	"strconv"
 	"strings"
 )
 
-type ArgTypeKey int
-
-const (
-	ReadingModeArgumentType ArgTypeKey = 0
-	FilenameArgumentType
-)
-
-const (
-	ReadingModeStdin string = "stdin"
-	ReadingModeFile  string = "file"
-)
-
-func readPuzzle(size int) ([][]string, error) {
-	var tile string
-	var puzzle [][]string
-	for i := 0; i < size; i++ {
-		var line []string
-		for j := 0; j < size; j++ {
-			_, err := fmt.Scanf("%v", &tile)
+func fromStringsToInts(data []string) ([][]int, error) {
+	matrix := make([][]int, 0, len(data))
+	for index, str := range data {
+		sstrings := strings.FieldsFunc(
+			str,
+			func(c rune) bool {
+				return c == ' '
+			},
+		)
+		matrix = append(matrix, []int{})
+		for _, v := range sstrings {
+			number, err := strconv.Atoi(v)
 			if err != nil {
-				return nil, fmt.Errorf("Incorrect map: wrong data\n")
+				return nil, fmt.Errorf("from strings to ints: %v", err)
 			}
-			line = append(line, tile)
+			matrix[index] = append(matrix[index], number)
 		}
-		puzzle = append(puzzle, line)
 	}
-	return puzzle, nil
+	return matrix, nil
 }
 
-func validateArgs() (map[ArgTypeKey]string, error) {
-	data := make(map[ArgTypeKey]string, 2)
-	if len(os.Args) == 1 {
-		data[ReadingModeArgumentType] = ReadingModeStdin
-	} else if len(os.Args) == 2 {
-		data[ReadingModeArgumentType] = ReadingModeFile
-		file := strings.Split(os.Args[1], "=")
-		if len(file) != 2 || file[0] != "file" {
-			return nil, fmt.Errorf("Incorrect argument: incorrect key-value pair\n")
-		} else {
-			data[FilenameArgumentType] = file[1]
-		}
-	} else {
-		return nil, fmt.Errorf("Incorrect argument: the program allow only 1 added argument\n")
+func parsingAndValidation() ([][]int, error) {
+	data, err := utils.ValidateArgs()
+	if err != nil {
+		return nil, err
 	}
-	return data, nil
+	var ss []string
+	if data[utils.ReadingModeArgumentType] == utils.ReadingModeFile {
+		ss, err = utils.ReadFromFile(data[utils.FilenameArgumentType])
+		if err != nil {
+			return nil, err
+		}
+	} else if data[utils.ReadingModeArgumentType] == utils.ReadingModeStdin {
+		err = utils.ReadFromStdin()
+		if err != nil {
+			return nil, err
+		}
+	}
+	utils.RemoveComments(ss)
+	ss = utils.RemoveStringsFromSlice(ss, "")
+	//utils.PrintSliceStrings(ss)
+	err = utils.ValidateInputData(ss)
+	if err != nil {
+		return nil, err
+	}
+	array, err := fromStringsToInts(ss[1:])
+	if err != nil {
+		return nil, err
+	}
+	return array, nil
 }
 
 func main() {
-	data, err := validateArgs()
+	array, err := parsingAndValidation()
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		return
 	}
-	if data[ReadingModeArgumentType] == ReadingModeFile {
-		//f, err := os.Open(string(data[FilenameArgumentType]))
-		//if err != nil {
-		//	fmt.Println(err)
-		//	return
-		//}
-		//reader := bufio.NewReader(f)
-		//defer f.Close()
-	} else if data[ReadingModeArgumentType] == ReadingModeFile {
-
-	}
+	fmt.Println(array)
 }
