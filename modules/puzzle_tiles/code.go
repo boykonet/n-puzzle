@@ -52,6 +52,25 @@ func (t *tiles) GenerateChild() ([]IPuzzleTiles, error) {
 	return children, nil
 }
 
+func (t *tiles) SetFval(fval int) {
+	t.Fval = fval
+}
+
+func (t *tiles) GetFval() int {
+	return t.Fval
+}
+
+func (t *tiles) GetValueByIndexes(i, j int) (int, error) {
+	if i >= t.PuzzleSize || j >= t.PuzzleSize {
+		return -1, fmt.Errorf("The indexes out of range\n")
+	}
+	return t.PuzzleData[i][j], nil
+}
+
+func (t *tiles) GetLevel() int {
+	return t.Level
+}
+
 func (t *tiles) findCoordinates(element int) (int, int, error) {
 	for i := 0; i < t.PuzzleSize; i++ {
 		for j := 0; j < t.PuzzleSize; j++ {
