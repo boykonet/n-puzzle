@@ -3,6 +3,7 @@ package puzzlesolver
 import (
 	"fmt"
 	puzzletiles "n-puzzle/modules/puzzle_tiles"
+	"time"
 )
 
 type solver struct {
@@ -31,16 +32,16 @@ func (ps *solver) appendClosed(closed puzzletiles.IPuzzleTiles) {
 	ps.Closed = append(ps.Closed, closed)
 }
 
-func (ps *solver) h(open, closed puzzletiles.IPuzzleTiles) (int, error) {
+func (ps *solver) h(start, goal puzzletiles.IPuzzleTiles) (int, error) {
 	temp := 0
 	for i := 0; i < ps.Size; i++ {
 		for j := 0; j < ps.Size; j++ {
-			openValue, err1 := open.GetValueByIndexes(i, j)
-			goalValue, err2 := closed.GetValueByIndexes(i, j)
+			startValue, err1 := start.GetValueByIndexes(i, j)
+			goalValue, err2 := goal.GetValueByIndexes(i, j)
 			if err1 != nil || err2 != nil {
 				return 0, err1
 			}
-			if openValue != goalValue && openValue != 0 {
+			if startValue != goalValue && startValue != 0 {
 				temp += 1
 			}
 		}
@@ -75,23 +76,38 @@ func (ps *solver) Solve() {
 	}
 	ps.Parent.SetFval(fval)
 	for {
-		curr := ps.Parent
-		h, _ := ps.h(curr, ps.Goal)
+		ps.Parent.PrintPuzzle()
+		fmt.Println()
+		h, err := ps.h(ps.Parent, ps.Goal)
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
 		if h == 0 {
 			break
 		}
-		children, _ := curr.GenerateChild()
+		//curr := ps.Parent
+		children, err := ps.Parent.GenerateChild()
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
+		counter := 0
 		for _, child := range children {
 			fval, err = ps.calcHeuristicVal(child, ps.Goal)
 			if err != nil {
-
+				fmt.Print(err)
+				return
 			}
 			child.SetFval(fval)
 			ps.appendChild(child)
+			counter += 1
 		}
-		ps.appendClosed(curr)
+		fmt.Println("counter = ", counter)
+		ps.appendClosed(ps.Parent)
 		ps.Parent = ps.Children[ps.bestChildIndex()]
-		ps.Children = ps.Children[:0]
+		ps.Children = ps.Children[0:0]
+		time.Sleep(2 * time.Second)
 	}
 	fmt.Println(ps.Parent)
 

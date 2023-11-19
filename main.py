@@ -94,6 +94,6 @@ class Puzzle:
 
 			self.open.sort(key = lambda x:x.fval, reverse=False)
 
-puz = Puzzle(4)
+puz = Puzzle(3)
 puz.process()
 

@@ -6,4 +6,5 @@ type IPuzzleTiles interface {
 	GetValueByIndexes(i, j int) (int, error)
 	GetLevel() int
 	GetFval() int
+	PrintPuzzle()
 }

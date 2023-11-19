@@ -36,7 +36,7 @@ func (t *tiles) getValidNeighboursIndexes(i, j int) [][]int {
 
 func (t *tiles) GenerateChild() ([]IPuzzleTiles, error) {
 	children := make([]IPuzzleTiles, 0, 4)
-	i, j, err := t.findCoordinates('_')
+	i, j, err := t.findCoordinates(0)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +72,7 @@ func (t *tiles) GetLevel() int {
 }
 
 func (t *tiles) findCoordinates(element int) (int, int, error) {
+
 	for i := 0; i < t.PuzzleSize; i++ {
 		for j := 0; j < t.PuzzleSize; j++ {
 			if t.PuzzleData[i][j] == element {
@@ -86,4 +87,10 @@ func (t *tiles) generateNewChild(i0, j0, i, j int) [][]int {
 	newPuzzle := utils.Duplicate2Darray(t.PuzzleData)
 	utils.Swap(&newPuzzle[i0][j0], &newPuzzle[i][j])
 	return newPuzzle
+}
+
+func (t *tiles) PrintPuzzle() {
+	for _, value := range t.PuzzleData {
+		fmt.Println(value)
+	}
 }

@@ -84,10 +84,7 @@ func main() {
 		fmt.Print(err)
 		return
 	}
-	fmt.Println(startPuzzle)
-	//fmt.Println(genGoalStateMatrix(3))
-	//fmt.Println(genGoalStateMatrix(4))
-	//fmt.Println(genGoalStateMatrix(5))
+	fmt.Println("start puzzle: ", startPuzzle)
 
 	puzzleSolver := puzzlesolver.NewPuzzleSolver(len(startPuzzle), startPuzzle, genGoalStateMatrix(len(startPuzzle)))
 	puzzleSolver.Solve()
