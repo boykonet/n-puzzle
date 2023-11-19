@@ -32,6 +32,13 @@ func (ps *solver) appendClosed(closed puzzletiles.IPuzzleTiles) {
 	ps.Closed = append(ps.Closed, closed)
 }
 
+func (ps *solver) getLastClosed() puzzletiles.IPuzzleTiles {
+	if len(ps.Closed) == 0 {
+		return nil
+	}
+	return ps.Closed[len(ps.Closed)-1]
+}
+
 func (ps *solver) h(start, goal puzzletiles.IPuzzleTiles) (int, error) {
 	temp := 0
 	for i := 0; i < ps.Size; i++ {
@@ -86,13 +93,13 @@ func (ps *solver) Solve() {
 		if h == 0 {
 			break
 		}
-		//curr := ps.Parent
-		children, err := ps.Parent.GenerateChild()
+		children, err := ps.Parent.GenerateChild(ps.getLastClosed())
 		if err != nil {
 			fmt.Print(err)
 			return
 		}
 		counter := 0
+
 		for _, child := range children {
 			fval, err = ps.calcHeuristicVal(child, ps.Goal)
 			if err != nil {
@@ -102,13 +109,15 @@ func (ps *solver) Solve() {
 			child.SetFval(fval)
 			ps.appendChild(child)
 			counter += 1
+			child.PrintPuzzle()
+			fmt.Println()
 		}
-		fmt.Println("counter = ", counter)
+
 		ps.appendClosed(ps.Parent)
 		ps.Parent = ps.Children[ps.bestChildIndex()]
 		ps.Children = ps.Children[0:0]
 		time.Sleep(2 * time.Second)
 	}
-	fmt.Println(ps.Parent)
+	//fmt.Println(ps.Parent)
 
 }

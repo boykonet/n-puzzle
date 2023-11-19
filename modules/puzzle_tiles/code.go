@@ -22,19 +22,38 @@ func NewPuzzleTiles(data [][]int, size int, level int, fval int) IPuzzleTiles {
 }
 
 func (t *tiles) getValidNeighboursIndexes(i, j int) [][]int {
-	return func(combs [][]int) [][]int {
+	return func(n_inds [][]int) [][]int {
 		neighbours := make([][]int, 0, 4)
-		for _, comb := range combs {
-			if comb[0] >= 0 && comb[0] < t.PuzzleSize &&
-				comb[1] >= 0 && comb[1] < t.PuzzleSize {
-				neighbours = append(neighbours, comb)
+		for _, indxs := range n_inds {
+			if indxs[0] >= 0 && indxs[0] < t.PuzzleSize &&
+				indxs[1] >= 0 && indxs[1] < t.PuzzleSize {
+				neighbours = append(neighbours, indxs)
 			}
 		}
 		return neighbours
-	}([][]int{{i - 1, j}, {i + 1, j}, {i, j - 1}, {i, j + 1}})
+	}([][]int{{i, j - 1}, {i, j + 1}, {i - 1, j}, {i + 1, j}})
 }
 
-func (t *tiles) GenerateChild() ([]IPuzzleTiles, error) {
+func (t *tiles) compareParentAndChild(parent, child IPuzzleTiles) int {
+	for i := 0; i < t.PuzzleSize; i++ {
+		for j := 0; j < t.PuzzleSize; j++ {
+			pval, err := parent.GetValueByIndexes(i, j)
+			if err != nil {
+				return -1
+			}
+			cval, err := child.GetValueByIndexes(i, j)
+			if err != nil {
+				return -1
+			}
+			if pval != cval {
+				return -1
+			}
+		}
+	}
+	return 0
+}
+
+func (t *tiles) GenerateChild(parent IPuzzleTiles) ([]IPuzzleTiles, error) {
 	children := make([]IPuzzleTiles, 0, 4)
 	i, j, err := t.findCoordinates(0)
 	if err != nil {
@@ -42,12 +61,28 @@ func (t *tiles) GenerateChild() ([]IPuzzleTiles, error) {
 	}
 	neighbours := t.getValidNeighboursIndexes(i, j)
 	for _, neighbour := range neighbours {
-		children = append(children, &tiles{
-			PuzzleData: t.generateNewChild(i, j, neighbour[0], neighbour[1]),
-			PuzzleSize: t.PuzzleSize,
-			Level:      t.Level + 1,
-			Fval:       0,
-		})
+		children = append(
+			children,
+			&tiles{
+				PuzzleData: t.generateNewChild(i, j, neighbour[0], neighbour[1]),
+				PuzzleSize: t.PuzzleSize,
+				Level:      t.Level + 1,
+				Fval:       0,
+			},
+		)
+	}
+
+	if parent != nil {
+		for i, child := range children {
+			if t.compareParentAndChild(parent, child) == 0 {
+				if i == 0 {
+					return children[1:], nil
+				} else if i == len(children)-1 {
+					return children[0:i], nil
+				}
+				return append(children[0:i], children[i+1:]...), nil
+			}
+		}
 	}
 	return children, nil
 }
@@ -60,9 +95,17 @@ func (t *tiles) GetFval() int {
 	return t.Fval
 }
 
+func (t *tiles) isSafeCoords(i, j int) error {
+	if (i >= 0 && i < t.PuzzleSize) && (j >= 0 && j < t.PuzzleSize) {
+		return nil
+	}
+	return fmt.Errorf("Indexes are out of range\n")
+}
+
 func (t *tiles) GetValueByIndexes(i, j int) (int, error) {
-	if i >= t.PuzzleSize || j >= t.PuzzleSize {
-		return -1, fmt.Errorf("The indexes out of range\n")
+	err := t.isSafeCoords(i, j)
+	if err != nil {
+		return -1, err
 	}
 	return t.PuzzleData[i][j], nil
 }

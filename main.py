@@ -5,7 +5,18 @@ class Node:
 		self.data = data
 		self.level = level
 		self.fval = fval
-	
+
+	def generate_child(self):
+		x,y = self.find(self.data,'_')
+		val_list = [[x,y-1],[x,y+1],[x-1,y],[x+1,y]]
+		children = []
+		for i in val_list:
+			child = self.shuffle(self.data,x,y,i[0],i[1])
+			if child is not None:
+				child_node = Node(child,self.level+1,0)
+				children.append(child_node)
+		return children
+
 	def shuffle(self, puz, x1, y1, x2, y2):
 		if x2 >= 0 and x2 < len(self.data) and y2 >= 0 and y2 < len(self.data):
 			temp_puz = []
@@ -17,27 +28,21 @@ class Node:
 		else:
 			return None
 
-	def generate_child(self):
-		x,y = self.find(self.data, '_')
-		val_list = [[x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]]
-		children = []
-		for pairs in val_list:
-			child = self.shuffle(self.data, x, y, pairs[0], pairs[1])
-			if child is not None:
-				child_node = Node(child, self.level + 1, 0)
-				children.append(child_node)
-		return children
+
+	def copy(self, root):
+		temp = []
+		for i in root:
+			t = []
+			for j in i:
+				t.append(j)
+			temp.append(t)
+		return temp
 
 	def find(self, puz, x):
 		for i in range(0, len(self.data)):
 			for j in range(0, len(self.data)):
 				if puz[i][j] == x:
 					return i, j
-
-	def copy(self, puz):
-		y = deepcopy(puz)
-		return y
-
 
 
 class Puzzle:
@@ -65,20 +70,20 @@ class Puzzle:
 		return temp
 
 	def process(self):
-		print('Enter the start state matrix \n')
+		print("Enter the start state matrix \n")
 		start = self.accept()
-		print('Enter the goal state matrix \n')
+		print("Enter the goal state matrix \n")
 		goal = self.accept()
 
 		start = Node(start, 0, 0)
 		start.fval = self.calc_heuristic_val(start, goal)
 		self.open.append(start)
-		print('\n\n')
+		print("\n\n")
 		while True:
 			curr = self.open[0]
-			print('')
-			print('  |  ')
-			print('  |  ')
+			print("")
+			print("  | ")
+			print("  | ")
 			print(" \\\'/ \n")
 			for i in curr.data:
 				for j in i:
@@ -96,4 +101,3 @@ class Puzzle:
 
 puz = Puzzle(3)
 puz.process()
-
