@@ -99,7 +99,6 @@ func (ps *solver) Solve() {
 			return
 		}
 		counter := 0
-
 		for _, child := range children {
 			fval, err = ps.calcHeuristicVal(child, ps.Goal)
 			if err != nil {
@@ -109,10 +108,7 @@ func (ps *solver) Solve() {
 			child.SetFval(fval)
 			ps.appendChild(child)
 			counter += 1
-			child.PrintPuzzle()
-			fmt.Println()
 		}
-
 		ps.appendClosed(ps.Parent)
 		ps.Parent = ps.Children[ps.bestChildIndex()]
 		ps.Children = ps.Children[0:0]
