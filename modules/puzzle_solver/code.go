@@ -3,29 +3,31 @@ package puzzlesolver
 import (
 	"fmt"
 	puzzletiles "n-puzzle/modules/puzzle_tiles"
+	"n-puzzle/modules/queue"
 	"time"
 )
 
+const (
+	RIGHT = iota
+	LEFT
+	UP
+	DOWN
+)
+
 type solver struct {
-	Size     int
-	Parent   puzzletiles.IPuzzleTiles
-	Children []puzzletiles.IPuzzleTiles
-	Closed   []puzzletiles.IPuzzleTiles
-	Goal     puzzletiles.IPuzzleTiles
+	States []puzzletiles.IPuzzleTiles
+	Closed []puzzletiles.IPuzzleTiles
 }
 
-func NewPuzzleSolver(size int, parent, goal [][]int) IPuzzleSolver {
+func NewPuzzleSolver() IPuzzleSolver {
 	return &solver{
-		Size:     size,
-		Parent:   puzzletiles.NewPuzzleTiles(parent, size, 0, 0),
-		Children: make([]puzzletiles.IPuzzleTiles, 0, 4),
-		Closed:   make([]puzzletiles.IPuzzleTiles, 0),
-		Goal:     puzzletiles.NewPuzzleTiles(goal, size, 0, 0),
+		States: make([]puzzletiles.IPuzzleTiles, 0, 4),
+		Closed: make([]puzzletiles.IPuzzleTiles, 0),
 	}
 }
 
-func (ps *solver) appendChild(child puzzletiles.IPuzzleTiles) {
-	ps.Children = append(ps.Children, child)
+func (ps *solver) appendState(child puzzletiles.IPuzzleTiles) {
+	ps.States = append(ps.States, child)
 }
 
 func (ps *solver) appendClosed(closed puzzletiles.IPuzzleTiles) {
@@ -39,12 +41,13 @@ func (ps *solver) getLastClosed() puzzletiles.IPuzzleTiles {
 	return ps.Closed[len(ps.Closed)-1]
 }
 
-func (ps *solver) h(start, goal puzzletiles.IPuzzleTiles) (int, error) {
+func (ps *solver) heuristic(currentState, goalState puzzletiles.IPuzzleTiles) (int, error) {
+	size := currentState.GetSize()
 	temp := 0
-	for i := 0; i < ps.Size; i++ {
-		for j := 0; j < ps.Size; j++ {
-			startValue, err1 := start.GetValueByIndexes(i, j)
-			goalValue, err2 := goal.GetValueByIndexes(i, j)
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			startValue, err1 := currentState.GetValueByIndexes(i, j)
+			goalValue, err2 := goalState.GetValueByIndexes(i, j)
 			if err1 != nil || err2 != nil {
 				return 0, err1
 			}
@@ -57,11 +60,11 @@ func (ps *solver) h(start, goal puzzletiles.IPuzzleTiles) (int, error) {
 }
 
 func (ps *solver) bestChildIndex() int {
-	min := ps.Children[0].GetFval()
+	minimum := ps.States[0].GetFval()
 	index := 0
-	for i, child := range ps.Children {
-		if min > child.GetFval() {
-			min = child.GetFval()
+	for i, child := range ps.States {
+		if minimum > child.GetFval() {
+			minimum = child.GetFval()
 			index = i
 		}
 	}
@@ -69,51 +72,62 @@ func (ps *solver) bestChildIndex() int {
 }
 
 func (ps *solver) calcHeuristicVal(open, closed puzzletiles.IPuzzleTiles) (int, error) {
-	heuristic, err := ps.h(open, closed)
+	heuristic, err := ps.heuristic(open, closed)
 	if err != nil {
 		return 0, err
 	}
 	return heuristic + open.GetLevel(), nil
 }
 
-func (ps *solver) Solve() {
-	fval, err := ps.calcHeuristicVal(ps.Parent, ps.Goal)
-	if err != nil {
+func (ps *solver) Solve(initialStateArray, goalStateArray [][]int) (bool, error) {
+	initialState := puzzletiles.NewPuzzleTiles(initialStateArray, len(initialStateArray), 0, 0)
+	goalState := puzzletiles.NewPuzzleTiles(goalStateArray, len(goalStateArray), 0, 0)
 
+	fval, err := ps.calcHeuristicVal(initialState, goalState)
+	if err != nil {
+		return false, err
 	}
-	ps.Parent.SetFval(fval)
+	initialState.SetFval(fval)
+
+	frontier := queue.NewQueue[puzzletiles.IPuzzleTiles]()
+	frontier.Push(initialState)
 	for {
-		ps.Parent.PrintPuzzle()
-		fmt.Println()
-		h, err := ps.h(ps.Parent, ps.Goal)
+		if frontier.Empty() {
+			return false, fmt.Errorf("no solution")
+		}
+		currentState := frontier.Back()
+		frontier.Pop()
+		//initialState.PrintPuzzle()
+		//fmt.Println()
+		h, err := ps.heuristic(currentState, goalState)
 		if err != nil {
 			fmt.Print(err)
-			return
+			return false, err
 		}
 		if h == 0 {
 			break
 		}
-		children, err := ps.Parent.GenerateChild(ps.getLastClosed())
+		states, err := currentState.GenerateStates(ps.getLastClosed())
 		if err != nil {
 			fmt.Print(err)
-			return
+			return false, err
 		}
 		counter := 0
-		for _, child := range children {
-			fval, err = ps.calcHeuristicVal(child, ps.Goal)
+		for _, state := range states {
+			fval, err = ps.calcHeuristicVal(state, goalState)
 			if err != nil {
 				fmt.Print(err)
-				return
+				return false, err
 			}
-			child.SetFval(fval)
-			ps.appendChild(child)
+			state.SetFval(fval)
+			ps.appendState(state)
 			counter += 1
 		}
-		ps.appendClosed(ps.Parent)
-		ps.Parent = ps.Children[ps.bestChildIndex()]
-		ps.Children = ps.Children[0:0]
+		ps.appendClosed(currentState)
+		currentState = ps.States[ps.bestChildIndex()]
+		ps.States = ps.States[0:0]
 		time.Sleep(2 * time.Second)
 	}
-	//fmt.Println(ps.Parent)
-
+	//fmt.Println(ps.InitialState)
+	return true, nil
 }

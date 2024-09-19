@@ -23,31 +23,41 @@ const (
 var (
 	// ErrorVDNotEnoughInfo Validated data function
 	ErrorVDNotEnoughInfo = errors.New("validateData: Not less than 4 rows, comments excluded")
-	// ErrorVDIncorrectPuzzleSize Validated data function
-	ErrorVDIncorrectPuzzleSize = errors.New("validateData: Incorrect puzzle size")
-	// ErrorVDIncorrectCountElemsInRow Validated data function
-	ErrorVDIncorrectCountElemsInRow = errors.New("validateData: Incorrect count elements in row")
+	// ErrorVDIncorrectPuzzleSize Incorrect puzzle size
+	ErrorVDIncorrectPuzzleSize = errors.New("incorrect puzzle size")
 	// ErrorVDIncorrectPuzzleNumber Validated data function
 	ErrorVDIncorrectPuzzleNumber = errors.New("validateData: Incorrect puzzle number")
-	// ErrorVDRepeatedNumber Validated data function
-	ErrorVDRepeatedNumber = errors.New("validateData: Repeated number")
+	// ErrorVDRepeatedNumber Repeated number in the map
+	ErrorVDRepeatedNumber = errors.New("repeated number in the map")
+	// ErrorIncorrectFileExtension Incorrect file extension (.txt)
+	ErrorIncorrectFileExtension = errors.New("incorrect file extension")
+
+	ErrorIncorrectAmountOfArgs = errors.New("incorrect amount of arguments")
 )
 
-func ValidateArgs() (map[ArgTypeKey]string, error) {
-	data := make(map[ArgTypeKey]string, 0)
-	if len(os.Args) == 1 {
+func checkFileExtension(filename string) error {
+	s := strings.Split(filename, ".")
+	if len(s) > 0 && s[len(s)-1] != "txt" {
+		return ErrorIncorrectFileExtension
+	}
+	return nil
+}
+
+func CheckAndReturnArgs() (map[ArgTypeKey]string, error) {
+	data := make(map[ArgTypeKey]string)
+	switch len(os.Args) {
+	case 1:
 		data[ReadingModeArgumentType] = ReadingModeStdin
-	} else if len(os.Args) == 2 {
+	case 2:
 		data[ReadingModeArgumentType] = ReadingModeFile
-		data[FilenameArgumentType] = os.Args[1]
-		//file := strings.Split(os.Args[1], "=")
-		//if len(file) != 2 || file[0] != "file" {
-		//	return nil, fmt.Errorf("Incorrect argument: incorrect key-value pair\n")
-		//} else {
-		//	data[FilenameArgumentType] = file[1]
-		//}
-	} else {
-		return nil, fmt.Errorf("Incorrect argument: the program allow only 1 added argument\n")
+		filename := os.Args[1]
+		err := checkFileExtension(filename)
+		if err != nil {
+			return nil, err
+		}
+		data[FilenameArgumentType] = filename
+	default:
+		return nil, ErrorIncorrectAmountOfArgs
 	}
 	return data, nil
 }
@@ -73,7 +83,7 @@ func ValidateInputData(data []string) error {
 			},
 		)
 		if len(sstrings) != int(puzzleSize) {
-			return ErrorVDIncorrectCountElemsInRow
+			return ErrorVDIncorrectPuzzleSize
 		}
 		for i := 0; i < int(puzzleSize); i++ {
 			number, err := strconv.ParseInt(sstrings[i], 10, 32)

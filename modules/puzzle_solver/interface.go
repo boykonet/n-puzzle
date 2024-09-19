@@ -1,5 +1,5 @@
 package puzzlesolver
 
 type IPuzzleSolver interface {
-	Solve()
+	Solve(initialState, goalState [][]int) (bool, error)
 }

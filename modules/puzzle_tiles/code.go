@@ -53,7 +53,7 @@ func (t *tiles) compareParentAndChild(parent, child IPuzzleTiles) int {
 	return 0
 }
 
-func (t *tiles) GenerateChild(parent IPuzzleTiles) ([]IPuzzleTiles, error) {
+func (t *tiles) GenerateStates(parent IPuzzleTiles) ([]IPuzzleTiles, error) {
 	children := make([]IPuzzleTiles, 0, 4)
 	i, j, err := t.findCoordinates(0)
 	if err != nil {
@@ -93,6 +93,10 @@ func (t *tiles) SetFval(fval int) {
 
 func (t *tiles) GetFval() int {
 	return t.Fval
+}
+
+func (t *tiles) GetSize() int {
+	return t.PuzzleSize
 }
 
 func (t *tiles) isSafeCoords(i, j int) error {

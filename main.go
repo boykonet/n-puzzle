@@ -1,39 +1,23 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	puzzlesolver "n-puzzle/modules/puzzle_solver"
+	parser "n-puzzle/modules/parser"
+	puzzleSolver "n-puzzle/modules/puzzle_solver"
 	"n-puzzle/modules/utils"
-	"strconv"
-	"strings"
 )
 
-func convertStringsToInts(data []string) ([][]int, error) {
-	matrix := make([][]int, 0, len(data))
-	for index, str := range data {
-		sstrings := strings.FieldsFunc(
-			str,
-			func(c rune) bool {
-				return c == ' '
-			},
-		)
-		matrix = append(matrix, []int{})
-		for _, v := range sstrings {
-			number, err := strconv.Atoi(v)
-			if err != nil {
-				return nil, fmt.Errorf("from strings to ints: %v", err)
-			}
-			matrix[index] = append(matrix[index], number)
-		}
-	}
-	return matrix, nil
-}
+var (
+	ErrorIncorrectReadingMode = errors.New("Not supported reading mode\n")
+)
 
-func parsingAndValidation() ([][]int, error) {
-	data, err := utils.ValidateArgs()
+func ReadAndParseMap() ([][]int, error) {
+	data, err := utils.CheckAndReturnArgs()
 	if err != nil {
 		return nil, err
 	}
+
 	var ss []string
 	if data[utils.ReadingModeArgumentType] == utils.ReadingModeFile {
 		ss, err = utils.ReadFromFile(data[utils.FilenameArgumentType])
@@ -41,28 +25,20 @@ func parsingAndValidation() ([][]int, error) {
 			return nil, err
 		}
 	} else if data[utils.ReadingModeArgumentType] == utils.ReadingModeStdin {
-		err = utils.ReadFromStdin()
+		_, err = utils.ReadFromStdin()
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		return nil, fmt.Errorf("Not supported reading mode\n")
+		return nil, ErrorIncorrectReadingMode
 	}
-	utils.RemoveComments(ss)
-	ss = utils.RemoveStringsFromSlice(ss, "")
-	//utils.PrintSliceStrings(ss)
-	err = utils.ValidateInputData(ss)
-	if err != nil {
-		return nil, err
-	}
-	array, err := convertStringsToInts(ss[1:])
-	if err != nil {
-		return nil, err
-	}
-	return array, nil
+
+	customParser := parser.NewMapParser()
+
+	return customParser.Parse(ss)
 }
 
-func genGoalStateMatrix(size int) [][]int {
+func generateGoalStateMatrix(size int) [][]int {
 	arr := make([][]int, size)
 	counter := 1
 	for i := 0; i < size; i++ {
@@ -79,13 +55,22 @@ func genGoalStateMatrix(size int) [][]int {
 }
 
 func main() {
-	startPuzzle, err := parsingAndValidation()
+	startPuzzle, err := ReadAndParseMap()
 	if err != nil {
 		fmt.Print(err)
 		return
 	}
 	fmt.Println("start puzzle: ", startPuzzle)
 
-	puzzleSolver := puzzlesolver.NewPuzzleSolver(len(startPuzzle), startPuzzle, genGoalStateMatrix(len(startPuzzle)))
-	puzzleSolver.Solve()
+	puzzleSolver := puzzleSolver.NewPuzzleSolver()
+	ok, err := puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if ok == true {
+		fmt.Println("The current puzzle is solvable")
+	} else {
+		fmt.Println("The current puzzle isn't solvable")
+	}
 }
