@@ -1,41 +1,29 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	parser "n-puzzle/modules/parser"
 	puzzleSolver "n-puzzle/modules/puzzle_solver"
 	"n-puzzle/modules/utils"
 )
 
-var (
-	ErrorIncorrectReadingMode = errors.New("Not supported reading mode\n")
-)
-
-func ReadAndParseMap() ([][]int, error) {
-	data, err := utils.CheckAndReturnArgs()
+func ReadAndParseMap() ([][]int, int, error) {
+	args, err := utils.CheckAndReturnArgs()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var ss []string
-	if data[utils.ReadingModeArgumentType] == utils.ReadingModeFile {
-		ss, err = utils.ReadFromFile(data[utils.FilenameArgumentType])
-		if err != nil {
-			return nil, err
-		}
-	} else if data[utils.ReadingModeArgumentType] == utils.ReadingModeStdin {
-		_, err = utils.ReadFromStdin()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, ErrorIncorrectReadingMode
+	rawMap, err := utils.ReadFromFile(args[utils.FilenameArgument])
+	if err != nil {
+		return nil, 0, err
 	}
+
+	heuristic := utils.HeuristicNames[args[utils.HeuristicFunctionArgument]]
 
 	customParser := parser.NewMapParser()
 
-	return customParser.Parse(ss)
+	parsedMap, err := customParser.Parse(rawMap)
+	return parsedMap, heuristic, err
 }
 
 func generateGoalStateMatrix(size int) [][]int {
@@ -55,7 +43,7 @@ func generateGoalStateMatrix(size int) [][]int {
 }
 
 func main() {
-	startPuzzle, err := ReadAndParseMap()
+	startPuzzle, heuristic, err := ReadAndParseMap()
 	if err != nil {
 		fmt.Print(err)
 		return
@@ -63,7 +51,7 @@ func main() {
 	fmt.Println("start puzzle: ", startPuzzle)
 
 	puzzleSolver := puzzleSolver.NewPuzzleSolver()
-	ok, err := puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)))
+	ok, err := puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)), heuristic)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -1,131 +1,203 @@
 package puzzlesolver
 
 import (
-	"fmt"
-	puzzletiles "n-puzzle/modules/puzzle_tiles"
+	puzzlestate "n-puzzle/modules/puzzle_state"
 	"n-puzzle/modules/queue"
+	"n-puzzle/modules/utils"
 	"time"
 )
 
-const (
-	RIGHT = iota
-	LEFT
-	UP
-	DOWN
-)
-
 type solver struct {
-	States []puzzletiles.IPuzzleTiles
-	Closed []puzzletiles.IPuzzleTiles
+	ExploredStatesMap  map[string]puzzlestate.IPuzzleState
+	ExploredStatesKeys []string
 }
 
 func NewPuzzleSolver() IPuzzleSolver {
 	return &solver{
-		States: make([]puzzletiles.IPuzzleTiles, 0, 4),
-		Closed: make([]puzzletiles.IPuzzleTiles, 0),
+		ExploredStatesMap:  make(map[string]puzzlestate.IPuzzleState),
+		ExploredStatesKeys: make([]string, 0),
 	}
 }
 
-func (ps *solver) appendState(child puzzletiles.IPuzzleTiles) {
-	ps.States = append(ps.States, child)
+func (ps *solver) addExploredState(state puzzlestate.IPuzzleState) {
+	key := state.Encrypt()
+	ps.ExploredStatesMap[key] = state
+	ps.ExploredStatesKeys = append(ps.ExploredStatesKeys, key)
 }
 
-func (ps *solver) appendClosed(closed puzzletiles.IPuzzleTiles) {
-	ps.Closed = append(ps.Closed, closed)
-}
-
-func (ps *solver) getLastClosed() puzzletiles.IPuzzleTiles {
-	if len(ps.Closed) == 0 {
+func (ps *solver) getLastExploredState() puzzlestate.IPuzzleState {
+	if len(ps.ExploredStatesKeys) == 0 {
 		return nil
 	}
-	return ps.Closed[len(ps.Closed)-1]
+	lastKey := ps.ExploredStatesKeys[len(ps.ExploredStatesKeys)-1]
+	return ps.ExploredStatesMap[lastKey]
 }
 
-func (ps *solver) heuristic(currentState, goalState puzzletiles.IPuzzleTiles) (int, error) {
-	size := currentState.GetSize()
-	temp := 0
-	for i := 0; i < size; i++ {
-		for j := 0; j < size; j++ {
-			startValue, err1 := currentState.GetValueByIndexes(i, j)
-			goalValue, err2 := goalState.GetValueByIndexes(i, j)
-			if err1 != nil || err2 != nil {
-				return 0, err1
-			}
-			if startValue != goalValue && startValue != 0 {
-				temp += 1
-			}
-		}
-	}
-	return temp, nil
-}
+//func ManhattanDistance(s, g puzzlestate.IPuzzleState) int {
+//	var manhattan int
+//
+//	size := s.GetSize()
+//	for i := 0; i < size*size; i++ {
+//		y1, x1, _ := s.Coordinates(i)
+//		y2, x2, _ := g.Coordinates(i)
+//		xSteps := math.Abs(float64(x1 - x2))
+//		ySteps := math.Abs(float64(y1 - y2))
+//		manhattan += int(xSteps + ySteps)
+//	}
+//	return manhattan
+//}
+//
+//func EuclideanDistance(s, g puzzlestate.IPuzzleState) int {
+//	var euclidean float64
+//
+//	size := s.GetSize()
+//	for i := 0; i < size*size; i++ {
+//		y1, x1, _ := s.Coordinates(i)
+//		y2, x2, _ := g.Coordinates(i)
+//		xDistance := math.Abs(float64(x1 - x2))
+//		yDistance := math.Abs(float64(y1 - y2))
+//		euclidean += math.Sqrt(xDistance*xDistance + yDistance*yDistance)
+//	}
+//	return int(euclidean)
+//}
+//
+//func ChebyshevDistance(s, g puzzlestate.IPuzzleState) int {
+//	var chebyshev int
+//
+//	size := s.GetSize()
+//	for i := 0; i < size*size; i++ {
+//		y1, x1, _ := s.Coordinates(i)
+//		y2, x2, _ := g.Coordinates(i)
+//		xSteps := math.Abs(float64(x1 - x2))
+//		ySteps := math.Abs(float64(y1 - y2))
+//		chebyshev += int(math.Max(xSteps, ySteps))
+//	}
+//	return chebyshev
+//}
+//
+//var ale = map[int]func(s, g puzzlestate.IPuzzleState) int{
+//	utils.ManhattanHeuristic: ManhattanDistance,
+//	utils.EuclideanHeuristic: EuclideanDistance,
+//	utils.ChebyshevHeuristic: ChebyshevDistance,
+//}
 
-func (ps *solver) bestChildIndex() int {
-	minimum := ps.States[0].GetFval()
+func (ps *solver) lessFvalElementIndex(states []puzzlestate.IPuzzleState) int {
+	//if len(states) == 0 {
+	//	return -1
+	//}
+	minFval := states[0].GetFval()
 	index := 0
-	for i, child := range ps.States {
-		if minimum > child.GetFval() {
-			minimum = child.GetFval()
+	for i, state := range states {
+		currFval := state.GetFval()
+		if minFval > currFval {
+			minFval = currFval
 			index = i
 		}
 	}
 	return index
 }
 
-func (ps *solver) calcHeuristicVal(open, closed puzzletiles.IPuzzleTiles) (int, error) {
-	heuristic, err := ps.heuristic(open, closed)
-	if err != nil {
-		return 0, err
-	}
-	return heuristic + open.GetLevel(), nil
+func (ps *solver) calcHeuristicVal(currentState, goalState puzzlestate.IPuzzleState, heuristic func(s, g puzzlestate.IPuzzleState) int) int {
+	return heuristic(currentState, goalState) + currentState.GetLevel()
 }
 
-func (ps *solver) Solve(initialStateArray, goalStateArray [][]int) (bool, error) {
-	initialState := puzzletiles.NewPuzzleTiles(initialStateArray, len(initialStateArray), 0, 0)
-	goalState := puzzletiles.NewPuzzleTiles(goalStateArray, len(goalStateArray), 0, 0)
+func (ps *solver) countInversions(initialState puzzlestate.IPuzzleState) int {
+	counter := 0
+	array := initialState.ConvertToArray()
+	size := initialState.GetSize()
 
-	fval, err := ps.calcHeuristicVal(initialState, goalState)
-	if err != nil {
-		return false, err
+	for i := 0; i < size*size-1; i++ {
+		for j := i + 1; j < size*size; j++ {
+			if array[i] > array[j] {
+				counter += 1
+			}
+		}
 	}
+	return counter
+}
+
+func (ps *solver) findXPosition(state puzzlestate.IPuzzleState) int {
+	for i := state.GetSize() - 1; i >= 0; i-- {
+		for j := state.GetSize() - 1; j >= 0; j-- {
+			value, _ := state.GetValueByIndexes(i, j)
+			if value == 0 {
+				return state.GetSize() - i
+			}
+		}
+	}
+	return -1
+}
+
+func (ps *solver) ifSolvable(initialState puzzlestate.IPuzzleState) bool {
+	size := initialState.GetSize()
+	amountOfInversions := ps.countInversions(initialState)
+
+	if size%2 == 1 {
+		return amountOfInversions%2 == 0
+	} else {
+		pos := ps.findXPosition(initialState)
+		if pos%2 == 1 {
+			return amountOfInversions%2 == 0
+		} else {
+			return amountOfInversions%2 == 1
+		}
+	}
+}
+
+func (ps *solver) ClearExploredPuzzleStates() {
+	for _, key := range ps.ExploredStatesKeys {
+		delete(ps.ExploredStatesMap, key)
+	}
+	ps.ExploredStatesKeys = ps.ExploredStatesKeys[0:0]
+}
+
+func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int) (bool, error) {
+	ps.ClearExploredPuzzleStates()
+
+	var totalNumberOfStates int
+
+	initialState := puzzlestate.NewPuzzleTiles(initialStateArray, len(initialStateArray), 0, 0)
+	goalState := puzzlestate.NewPuzzleTiles(goalStateArray, len(goalStateArray), 0, 0)
+
+	if ps.ifSolvable(initialState) == false {
+		return false, nil
+	}
+
+	heuristicFunc, ok := puzzlestate.DistanceFunctionNames[heurictic]
+	if ok == false {
+		return false, utils.ErrorHeuristic
+	}
+
+	fval := ps.calcHeuristicVal(initialState, goalState, heuristicFunc)
 	initialState.SetFval(fval)
 
-	frontier := queue.NewQueue[puzzletiles.IPuzzleTiles]()
+	frontier := queue.NewQueue[puzzlestate.IPuzzleState]()
 	frontier.Push(initialState)
+	totalNumberOfStates += 1
 	for {
-		if frontier.Empty() {
-			return false, fmt.Errorf("no solution")
+		if frontier.Empty() == true {
+			return false, nil
 		}
-		currentState := frontier.Back()
+		currentState := frontier.Front()
 		frontier.Pop()
-		//initialState.PrintPuzzle()
-		//fmt.Println()
-		h, err := ps.heuristic(currentState, goalState)
-		if err != nil {
-			fmt.Print(err)
-			return false, err
-		}
+		h := heuristicFunc(currentState, goalState)
 		if h == 0 {
 			break
 		}
-		states, err := currentState.GenerateStates(ps.getLastClosed())
-		if err != nil {
-			fmt.Print(err)
-			return false, err
+		expandedNodes := currentState.Actions()
+		for _, node := range expandedNodes {
+			fval = ps.calcHeuristicVal(node, goalState, heuristicFunc)
+			node.SetFval(fval)
 		}
-		counter := 0
-		for _, state := range states {
-			fval, err = ps.calcHeuristicVal(state, goalState)
-			if err != nil {
-				fmt.Print(err)
-				return false, err
-			}
-			state.SetFval(fval)
-			ps.appendState(state)
-			counter += 1
+		totalNumberOfStates += len(expandedNodes)
+
+		ps.addExploredState(currentState)
+		bestState := expandedNodes[ps.lessFvalElementIndex(expandedNodes)]
+		encrypted := bestState.Encrypt()
+		_, ok := ps.ExploredStatesMap[encrypted]
+		if ok == false {
+			frontier.Push(bestState)
 		}
-		ps.appendClosed(currentState)
-		currentState = ps.States[ps.bestChildIndex()]
-		ps.States = ps.States[0:0]
 		time.Sleep(2 * time.Second)
 	}
 	//fmt.Println(ps.InitialState)

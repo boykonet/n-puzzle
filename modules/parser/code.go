@@ -23,7 +23,7 @@ func (mp *mapParser) Parse(puzzleMap []string) ([][]int, error) {
 		return nil, err
 	}
 
-	// remove the string with the map size from map
+	// remove the map size from the map
 	puzzleMap = puzzleMap[1:]
 
 	matrix, err := mp.ConvertToIntMatrix(puzzleMap)
@@ -45,7 +45,6 @@ func (mp *mapParser) RemoveComments(data []string) /*[]string*/ {
 		}
 		data[i] = str[:index]
 	}
-	//return data
 }
 
 func (mp *mapParser) TrimRows(puzzleMap []string) /*[]string*/ {
@@ -53,11 +52,9 @@ func (mp *mapParser) TrimRows(puzzleMap []string) /*[]string*/ {
 		row = strings.Trim(row, " ")
 		puzzleMap[index] = row
 	}
-	//return puzzleMap
 }
 
 func (mp *mapParser) RemoveEmptyStrings(data []string) []string {
-	//var res []string
 	size := len(data)
 	for i := 0; i < size; {
 		if data[i] == "" {
@@ -67,11 +64,8 @@ func (mp *mapParser) RemoveEmptyStrings(data []string) []string {
 			continue
 		}
 		i++
-		//res = append(res, data[i])
 	}
 	return data
-	//data = res
-	//return res
 }
 
 func (mp *mapParser) ConvertToIntMatrix(puzzleMap []string) ([][]int, error) {
@@ -103,15 +97,18 @@ var (
 )
 
 func (mp *mapParser) Validate(puzzleMap [][]int, size int) error {
+	if len(puzzleMap) != size {
+		return ErrorIncorrectMapSize
+	}
 	elementsInMap := make(map[int]struct{})
-	maxPossibleValue := size * size
+	maxPossibleValue := size*size - 1
 	for _, row := range puzzleMap {
 		if len(row) != size {
 			return ErrorIncorrectMapSize
 		}
 		for _, value := range row {
 			_, ok := elementsInMap[value]
-			if value < 0 || value >= maxPossibleValue || ok == true {
+			if value < 0 || value > maxPossibleValue || ok == true {
 				return ErrorIncorrectMapValue
 			}
 			elementsInMap[value] = struct{}{}

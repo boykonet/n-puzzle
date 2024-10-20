@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -11,28 +10,38 @@ import (
 type ArgTypeKey int
 
 const (
-	ReadingModeArgumentType ArgTypeKey = iota
-	FilenameArgumentType
+	_ ArgTypeKey = iota
+	FilenameArgument
+	HeuristicFunctionArgument
 )
 
 const (
-	ReadingModeStdin string = "stdin"
-	ReadingModeFile  string = "file"
+	_ int = iota
+	ManhattanHeuristic
+	EuclideanHeuristic
+	ChebyshevHeuristic
 )
 
-var (
-	// ErrorVDNotEnoughInfo Validated data function
-	ErrorVDNotEnoughInfo = errors.New("validateData: Not less than 4 rows, comments excluded")
-	// ErrorVDIncorrectPuzzleSize Incorrect puzzle size
-	ErrorVDIncorrectPuzzleSize = errors.New("incorrect puzzle size")
-	// ErrorVDIncorrectPuzzleNumber Validated data function
-	ErrorVDIncorrectPuzzleNumber = errors.New("validateData: Incorrect puzzle number")
-	// ErrorVDRepeatedNumber Repeated number in the map
-	ErrorVDRepeatedNumber = errors.New("repeated number in the map")
-	// ErrorIncorrectFileExtension Incorrect file extension (.txt)
-	ErrorIncorrectFileExtension = errors.New("incorrect file extension")
+var HeuristicNames = map[string]int{
+	"manhattan": ManhattanHeuristic,
+	"euclidean": EuclideanHeuristic,
+	"chebyshev": ChebyshevHeuristic,
+}
 
-	ErrorIncorrectAmountOfArgs = errors.New("incorrect amount of arguments")
+var (
+	// ErrorIncorrectMap Incorrect map
+	ErrorIncorrectMap = errors.New("Incorrect map")
+	// ErrorIncorrectAmountOfRows Incorrect amount of rows
+	ErrorIncorrectAmountOfRows    = errors.New("Incorrect amount of rows")
+	ErrorIncorrectAmountOfColumns = errors.New("Incorrect amount of columns")
+	// ErrorIncorrectFileExtension Incorrect file extension (.txt)
+	ErrorIncorrectFileExtension = errors.New("Incorrect file extension.\nSupported name is .txt")
+
+	ErrorIncorrectAmountOfArgs = errors.New("Incorrect amount of arguments.\nExpected 2 arguments: the filename and the name of the heuristic function")
+
+	ErrorHeuristic = errors.New("Incorrect name of the heuristic function.\nThe supported names are:\n    - manhattan\n    - euclidean\n    - chebyshev")
+
+	ErrorInfoMessage = errors.New("The program takes 2 arguments:\n1. The filename with .txt extension\n2. The name of the heuristic function:\n    - manhattan\n    - euclidean\n    - chebyshev")
 )
 
 func checkFileExtension(filename string) error {
@@ -43,19 +52,29 @@ func checkFileExtension(filename string) error {
 	return nil
 }
 
+// CheckAndReturnArgs
+// ./program_name                   - info message
+// ./program_name map.txt manhattan - correct input
 func CheckAndReturnArgs() (map[ArgTypeKey]string, error) {
 	data := make(map[ArgTypeKey]string)
 	switch len(os.Args) {
 	case 1:
-		data[ReadingModeArgumentType] = ReadingModeStdin
+		return nil, ErrorInfoMessage
 	case 2:
-		data[ReadingModeArgumentType] = ReadingModeFile
+		return nil, ErrorIncorrectAmountOfArgs
+	case 3:
 		filename := os.Args[1]
 		err := checkFileExtension(filename)
 		if err != nil {
 			return nil, err
 		}
-		data[FilenameArgumentType] = filename
+		data[FilenameArgument] = filename
+		heuristic := os.Args[2]
+		_, ok := HeuristicNames[heuristic]
+		if ok == false {
+			return nil, ErrorHeuristic
+		}
+		data[HeuristicFunctionArgument] = heuristic
 	default:
 		return nil, ErrorIncorrectAmountOfArgs
 	}
@@ -64,17 +83,17 @@ func CheckAndReturnArgs() (map[ArgTypeKey]string, error) {
 
 func ValidateInputData(data []string) error {
 	if len(data) < 4 {
-		return ErrorVDNotEnoughInfo
+		return ErrorIncorrectMap
 	}
 	puzzleSize, err := strconv.ParseInt(data[0], 10, 32)
 	if err != nil {
-		return fmt.Errorf("validate data: %v\n", err)
+		return err
 	}
 	if len(data)-1 != int(puzzleSize) {
-		return ErrorVDIncorrectPuzzleSize
+		return ErrorIncorrectAmountOfRows
 	}
 	data = data[1:]
-	m := make(map[int64]bool, 0)
+	m := make(map[int64]struct{})
 	for _, str := range data {
 		sstrings := strings.FieldsFunc(
 			str,
@@ -83,21 +102,21 @@ func ValidateInputData(data []string) error {
 			},
 		)
 		if len(sstrings) != int(puzzleSize) {
-			return ErrorVDIncorrectPuzzleSize
+			return ErrorIncorrectAmountOfColumns
 		}
 		for i := 0; i < int(puzzleSize); i++ {
 			number, err := strconv.ParseInt(sstrings[i], 10, 32)
 			if err != nil {
-				return fmt.Errorf("validate data: %v\n", err)
+				return err
 			}
 			if number >= puzzleSize*puzzleSize || number < 0 {
-				return ErrorVDIncorrectPuzzleNumber
+				return ErrorIncorrectMap
 			}
 			_, ok := m[number]
 			if ok == true {
-				return ErrorVDRepeatedNumber
+				return ErrorIncorrectMap
 			}
-			m[number] = true
+			m[number] = struct{}{}
 		}
 	}
 	return nil
