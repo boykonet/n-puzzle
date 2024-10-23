@@ -33,54 +33,7 @@ func (ps *solver) getLastExploredState() puzzlestate.IPuzzleState {
 	return ps.ExploredStatesMap[lastKey]
 }
 
-//func ManhattanDistance(s, g puzzlestate.IPuzzleState) int {
-//	var manhattan int
-//
-//	size := s.GetSize()
-//	for i := 0; i < size*size; i++ {
-//		y1, x1, _ := s.Coordinates(i)
-//		y2, x2, _ := g.Coordinates(i)
-//		xSteps := math.Abs(float64(x1 - x2))
-//		ySteps := math.Abs(float64(y1 - y2))
-//		manhattan += int(xSteps + ySteps)
-//	}
-//	return manhattan
-//}
-//
-//func EuclideanDistance(s, g puzzlestate.IPuzzleState) int {
-//	var euclidean float64
-//
-//	size := s.GetSize()
-//	for i := 0; i < size*size; i++ {
-//		y1, x1, _ := s.Coordinates(i)
-//		y2, x2, _ := g.Coordinates(i)
-//		xDistance := math.Abs(float64(x1 - x2))
-//		yDistance := math.Abs(float64(y1 - y2))
-//		euclidean += math.Sqrt(xDistance*xDistance + yDistance*yDistance)
-//	}
-//	return int(euclidean)
-//}
-//
-//func ChebyshevDistance(s, g puzzlestate.IPuzzleState) int {
-//	var chebyshev int
-//
-//	size := s.GetSize()
-//	for i := 0; i < size*size; i++ {
-//		y1, x1, _ := s.Coordinates(i)
-//		y2, x2, _ := g.Coordinates(i)
-//		xSteps := math.Abs(float64(x1 - x2))
-//		ySteps := math.Abs(float64(y1 - y2))
-//		chebyshev += int(math.Max(xSteps, ySteps))
-//	}
-//	return chebyshev
-//}
-//
-//var ale = map[int]func(s, g puzzlestate.IPuzzleState) int{
-//	utils.ManhattanHeuristic: ManhattanDistance,
-//	utils.EuclideanHeuristic: EuclideanDistance,
-//	utils.ChebyshevHeuristic: ChebyshevDistance,
-//}
-
+// TODO: ???
 func (ps *solver) lessFvalElementIndex(states []puzzlestate.IPuzzleState) int {
 	//if len(states) == 0 {
 	//	return -1
@@ -101,6 +54,7 @@ func (ps *solver) calcHeuristicVal(currentState, goalState puzzlestate.IPuzzleSt
 	return heuristic(currentState, goalState) + currentState.GetLevel()
 }
 
+// countInversions shows how the current puzzle state is close by the goal state, to the sorted array
 func (ps *solver) countInversions(initialState puzzlestate.IPuzzleState) int {
 	counter := 0
 	array := initialState.ConvertToArray()
@@ -116,6 +70,8 @@ func (ps *solver) countInversions(initialState puzzlestate.IPuzzleState) int {
 	return counter
 }
 
+// findXPosition helper function which helps to find the position of the empty tile by the row from bottom to top
+// Returns the index of the empty tile from the bottom of the puzzle by the row
 func (ps *solver) findXPosition(state puzzlestate.IPuzzleState) int {
 	for i := state.GetSize() - 1; i >= 0; i-- {
 		for j := state.GetSize() - 1; j >= 0; j-- {
@@ -156,8 +112,8 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int
 
 	var totalNumberOfStates int
 
-	initialState := puzzlestate.NewPuzzleTiles(initialStateArray, len(initialStateArray), 0, 0)
-	goalState := puzzlestate.NewPuzzleTiles(goalStateArray, len(goalStateArray), 0, 0)
+	initialState := puzzlestate.NewPuzzleTiles(initialStateArray, len(initialStateArray), 0, 0, nil)
+	goalState := puzzlestate.NewPuzzleTiles(goalStateArray, len(goalStateArray), 0, 0, nil)
 
 	if ps.ifSolvable(initialState) == false {
 		return false, nil
@@ -182,9 +138,13 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int
 		frontier.Pop()
 		h := heuristicFunc(currentState, goalState)
 		if h == 0 {
+			list := currentState.ListOfStates()
+			for _, l := range list {
+				l.PrintPuzzle()
+			}
 			break
 		}
-		expandedNodes := currentState.Actions()
+		expandedNodes := puzzlestate.Actions(currentState)
 		for _, node := range expandedNodes {
 			fval = ps.calcHeuristicVal(node, goalState, heuristicFunc)
 			node.SetFval(fval)
@@ -200,6 +160,7 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int
 		}
 		time.Sleep(2 * time.Second)
 	}
+
 	//fmt.Println(ps.InitialState)
 	return true, nil
 }

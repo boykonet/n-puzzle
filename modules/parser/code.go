@@ -13,6 +13,7 @@ func NewMapParser() IMapParser {
 	return &mapParser{}
 }
 
+// Parse TODO: doesn't work with the map without empty line in the end of the map
 func (mp *mapParser) Parse(puzzleMap []string) ([][]int, error) {
 	mp.RemoveComments(puzzleMap)
 	puzzleMap = mp.RemoveEmptyStrings(puzzleMap)
