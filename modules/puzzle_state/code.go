@@ -14,14 +14,14 @@ const (
 )
 
 // coordinate correction
-var cc = map[int]struct{ X, Y int }{
+var coordCorrection = map[int]struct{ X, Y int }{
 	SwapLeft:  {X: -1, Y: 0},
 	SwapRight: {X: 1, Y: 0},
 	SwapUp:    {X: 0, Y: -1},
 	SwapDown:  {X: 0, Y: 1},
 }
 
-var ccKeys = []int{SwapLeft, SwapDown, SwapUp, SwapDown}
+var actions = []int{SwapLeft, SwapDown, SwapUp, SwapDown}
 
 type state struct {
 	Data   [][]int
@@ -31,10 +31,17 @@ type state struct {
 	Parent IPuzzleState
 }
 
-func NewPuzzleTiles(data [][]int, size int, level int, fval int, parent IPuzzleState) IPuzzleState {
+func NewPuzzleState(data [][]int, level int, heuristicFunc func(s, g [][]int) int, goal, parent IPuzzleState) IPuzzleState {
+	var fval int
+	if goal == nil {
+		// current state is equivalent of the goal state
+		fval = 0
+	} else {
+		fval = heuristicFunc(data, goal.CopyMatrix())
+	}
 	return &state{
 		Data:   utils.Duplicate2DArray(data),
-		Size:   size,
+		Size:   len(data),
 		Level:  level,
 		Fval:   fval,
 		Parent: parent,
@@ -59,12 +66,8 @@ func (s *state) Encrypt() string {
 	return encryptedState
 }
 
-func (s *state) CopyPuzzle() [][]int {
+func (s *state) CopyMatrix() [][]int {
 	return utils.Duplicate2DArray(s.Data)
-}
-
-func (s *state) SetFval(fval int) {
-	s.Fval = fval
 }
 
 func (s *state) GetFval() int {
@@ -76,7 +79,6 @@ func (s *state) GetSize() int {
 }
 
 func (s *state) GetValueByIndexes(i, j int) (int, error) {
-	//ok := s.isValidIndexes(i, j)
 	if !(i >= 0 && i < s.Size && j >= 0 && j < s.Size) {
 		return -1, fmt.Errorf("indexes are out of range")
 	}
@@ -101,9 +103,9 @@ func (s *state) ConvertToArray() []int {
 
 // Coordinates Returns the coordinates (y, x, nil) of the number in matrix if the current number exists.
 // Otherwise, returns (-1, -1, error)
-func (s *state) Coordinates(number int) (int, int, error) {
-	for y := 0; y < s.Size; y++ {
-		for x := 0; x < s.Size; x++ {
+func (s *state) Coordinates(number int) (y int, x int, e error) {
+	for y = 0; y < s.Size; y++ {
+		for x = 0; x < s.Size; x++ {
 			if s.Data[y][x] == number {
 				return y, x, nil
 			}
