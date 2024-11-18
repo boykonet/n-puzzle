@@ -1,4 +1,4 @@
-package queue
+package priority_queue
 
 type IQueue[T any] interface {
 	Empty() bool

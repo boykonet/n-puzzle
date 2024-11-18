@@ -1,58 +1,58 @@
 package puzzlesolver
 
 import (
+	"n-puzzle/modules/priority_queue"
 	puzzlestate "n-puzzle/modules/puzzle_state"
-	"n-puzzle/modules/queue"
 	"n-puzzle/modules/utils"
 	"time"
 )
 
 type solver struct {
-	ExploredStatesMap  map[string]puzzlestate.IPuzzleState
-	ExploredStatesKeys []string
+	ClosedStatesMap  map[string]puzzlestate.IPuzzleState
+	ClosedStatesKeys []string
 }
 
 func NewPuzzleSolver() IPuzzleSolver {
 	return &solver{
-		ExploredStatesMap:  make(map[string]puzzlestate.IPuzzleState),
-		ExploredStatesKeys: make([]string, 0),
+		ClosedStatesMap:  make(map[string]puzzlestate.IPuzzleState),
+		ClosedStatesKeys: make([]string, 0),
 	}
 }
 
-func (ps *solver) addExploredState(state puzzlestate.IPuzzleState) {
+func (ps *solver) addClosedState(state puzzlestate.IPuzzleState) {
 	key := state.Encrypt()
-	ps.ExploredStatesMap[key] = state
-	ps.ExploredStatesKeys = append(ps.ExploredStatesKeys, key)
+	ps.ClosedStatesMap[key] = state
+	ps.ClosedStatesKeys = append(ps.ClosedStatesKeys, key)
 }
 
 func (ps *solver) getLastExploredState() puzzlestate.IPuzzleState {
-	if len(ps.ExploredStatesKeys) == 0 {
+	if len(ps.ClosedStatesKeys) == 0 {
 		return nil
 	}
-	lastKey := ps.ExploredStatesKeys[len(ps.ExploredStatesKeys)-1]
-	return ps.ExploredStatesMap[lastKey]
+	lastKey := ps.ClosedStatesKeys[len(ps.ClosedStatesKeys)-1]
+	return ps.ClosedStatesMap[lastKey]
 }
 
 // TODO: ???
-func (ps *solver) lessFvalElementIndex(states []puzzlestate.IPuzzleState) int {
-	//if len(states) == 0 {
-	//	return -1
-	//}
-	minFval := states[0].GetFval()
-	index := 0
-	for i, state := range states {
-		currFval := state.GetFval()
-		if minFval > currFval {
-			minFval = currFval
-			index = i
-		}
-	}
-	return index
-}
+//func (ps *solver) lessFvalElementIndex(states []puzzlestate.IPuzzleState) int {
+//	//if len(states) == 0 {
+//	//	return -1
+//	//}
+//	minFval := states[0].GetFval()
+//	index := 0
+//	for i, state := range states {
+//		currFval := state.GetFval()
+//		if minFval > currFval {
+//			minFval = currFval
+//			index = i
+//		}
+//	}
+//	return index
+//}
 
-func (ps *solver) calcHeuristicVal(currentState, goalState puzzlestate.IPuzzleState, heuristic func(s, g puzzlestate.IPuzzleState) int) int {
-	return heuristic(currentState, goalState) + currentState.GetLevel()
-}
+//func (ps *solver) calcHeuristicVal(currentState, goalState puzzlestate.IPuzzleState, heuristic func(s, g puzzlestate.IPuzzleState) int) int {
+//	return heuristic(currentState, goalState) + currentState.GetLevel()
+//}
 
 // countInversions shows how the current puzzle state is close by the goal state, to the sorted array
 func (ps *solver) countInversions(initialState puzzlestate.IPuzzleState) int {
@@ -101,66 +101,62 @@ func (ps *solver) ifSolvable(initialState puzzlestate.IPuzzleState) bool {
 }
 
 func (ps *solver) ClearExploredPuzzleStates() {
-	for _, key := range ps.ExploredStatesKeys {
-		delete(ps.ExploredStatesMap, key)
+	for _, key := range ps.ClosedStatesKeys {
+		delete(ps.ClosedStatesMap, key)
 	}
-	ps.ExploredStatesKeys = ps.ExploredStatesKeys[0:0]
+	ps.ClosedStatesKeys = ps.ClosedStatesKeys[0:0]
 }
 
 func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int) (bool, error) {
 	ps.ClearExploredPuzzleStates()
-
-	var totalNumberOfStates int
-
-	initialState := puzzlestate.NewPuzzleTiles(initialStateArray, len(initialStateArray), 0, 0, nil)
-	goalState := puzzlestate.NewPuzzleTiles(goalStateArray, len(goalStateArray), 0, 0, nil)
-
-	if ps.ifSolvable(initialState) == false {
-		return false, nil
-	}
 
 	heuristicFunc, ok := puzzlestate.DistanceFunctionNames[heurictic]
 	if ok == false {
 		return false, utils.ErrorHeuristic
 	}
 
-	fval := ps.calcHeuristicVal(initialState, goalState, heuristicFunc)
-	initialState.SetFval(fval)
+	goalState := puzzlestate.NewPuzzleState(goalStateArray, 0, nil, nil, nil)
+	initialState := puzzlestate.NewPuzzleState(initialStateArray, 0, heuristicFunc, goalState, nil)
 
-	frontier := queue.NewQueue[puzzlestate.IPuzzleState]()
-	frontier.Push(initialState)
-	totalNumberOfStates += 1
+	// Check if the initial state is solvable
+	if ps.ifSolvable(initialState) == false {
+		return false, nil
+	}
+
+	//fval := ps.calcHeuristicVal(initialState, goalState, heuristicFunc)
+	//initialState.SetFval(fval)
+
+	openStates := priority_queue.NewQueue[puzzlestate.IPuzzleState]()
+	openStates.Push(initialState)
+
+	//var totalNumberOfStates int
+	//totalNumberOfStates += 1
 	for {
-		if frontier.Empty() == true {
+		if openStates.Empty() == true {
 			return false, nil
 		}
-		currentState := frontier.Front()
-		frontier.Pop()
-		h := heuristicFunc(currentState, goalState)
-		if h == 0 {
+		currentState := openStates.Front()
+		openStates.Pop()
+		if currentState.GetFval() == 0 {
 			list := currentState.ListOfStates()
 			for _, l := range list {
 				l.PrintPuzzle()
 			}
 			break
 		}
-		expandedNodes := puzzlestate.Actions(currentState)
-		for _, node := range expandedNodes {
-			fval = ps.calcHeuristicVal(node, goalState, heuristicFunc)
-			node.SetFval(fval)
-		}
-		totalNumberOfStates += len(expandedNodes)
+		expandedNodes := puzzlestate.Actions(currentState, goalState, heuristicFunc)
+		//totalNumberOfStates += len(expandedNodes)
+		ps.addClosedState(currentState)
 
-		ps.addExploredState(currentState)
-		bestState := expandedNodes[ps.lessFvalElementIndex(expandedNodes)]
-		encrypted := bestState.Encrypt()
-		_, ok := ps.ExploredStatesMap[encrypted]
-		if ok == false {
-			frontier.Push(bestState)
+		for _, node := range expandedNodes {
+			encrypted := node.Encrypt()
+			_, ok = ps.ClosedStatesMap[encrypted]
+			if ok == false {
+				openStates.Push(node)
+			}
 		}
 		time.Sleep(2 * time.Second)
 	}
 
-	//fmt.Println(ps.InitialState)
 	return true, nil
 }

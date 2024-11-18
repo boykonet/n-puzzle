@@ -1,4 +1,4 @@
-package queue
+package priority_queue
 
 type queueStruct[T any] struct {
 	array []T

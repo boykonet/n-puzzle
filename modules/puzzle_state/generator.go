@@ -1,38 +1,38 @@
 package puzzlestate
 
 import (
-	"fmt"
 	"n-puzzle/modules/utils"
 )
 
 // Result returns a new child puzzle state depends on the given action (swipe empty tile up, down, left or right)
-func Result(state IPuzzleState, action int) IPuzzleState {
+func Result(s, g IPuzzleState, action int, heuristicFunc func(s, g [][]int) int) IPuzzleState {
 	if action < SwapLeft && action > SwapDown {
 		return nil
 	}
 
-	x0, y0, _ := state.Coordinates(0)
-	childData := state.CopyPuzzle()
-	correction := cc[action]
+	// Find the coordinate of the empty tile
+	y0, x0, _ := s.Coordinates(0)
 
-	x, y := x0+correction.X, y0+correction.Y
+	childData := s.CopyMatrix()
+	correction := coordCorrection[action]
 
-	if !((x >= 0 && x < state.GetSize()) && (y >= 0 && y < state.GetSize())) {
+	y, x := y0+correction.Y, x0+correction.X
+
+	if !((x >= 0 && x < s.GetSize()) && (y >= 0 && y < s.GetSize())) {
 		return nil
 	}
 
-	fmt.Println("x =", x, "y =", y)
-
 	utils.Swap(&childData[x0][y0], &childData[x][y])
-	return NewPuzzleTiles(childData, state.GetSize(), state.GetLevel(), state.GetFval(), state)
+	// TODO: should be child Data, NOT s
+	return NewPuzzleState(childData, s.GetLevel()+1, heuristicFunc, g, s)
 }
 
 // Actions Takes the current state and returns the child states
-func Actions(state IPuzzleState) []IPuzzleState {
+func Actions(s, g IPuzzleState, heuristicFunc func(s, g [][]int) int) []IPuzzleState {
 	states := make([]IPuzzleState, 0, 4)
 
-	for key, _ := range ccKeys {
-		newState := Result(state, key)
+	for action, _ := range actions {
+		newState := Result(s, g, action, heuristicFunc)
 		if newState != nil {
 			states = append(states, newState)
 		}

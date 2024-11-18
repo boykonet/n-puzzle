@@ -1,8 +1,6 @@
 package puzzlestate
 
 type IPuzzleState interface {
-	//Actions() []IPuzzleState
-	SetFval(int)
 	GetValueByIndexes(i, j int) (int, error)
 	GetLevel() int
 	GetFval() int
@@ -10,7 +8,7 @@ type IPuzzleState interface {
 	Encrypt() string
 	ConvertToArray() []int
 	PrintPuzzle()
-	Coordinates(number int) (int, int, error)
-	CopyPuzzle() [][]int
+	Coordinates(number int) (y int, x int, e error)
+	CopyMatrix() [][]int
 	ListOfStates() []IPuzzleState
 }
