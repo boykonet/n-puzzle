@@ -1,11 +1,8 @@
 package priority_queue
 
 type IQueue[T any] interface {
-	Empty() bool
-	Size() int
-	Front() T
-	Back() T
-	Push(element T)
-	Pop()
-	//Swap()
+	Enqueue(value T, priority int)
+	Dequeue() (T, error)
+	Peek() (T, error)
+	Len() int
 }
