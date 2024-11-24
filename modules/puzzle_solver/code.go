@@ -34,27 +34,6 @@ func (ps *solver) getLastExploredState() puzzlestate.IPuzzleState {
 	return ps.ClosedStatesMap[lastKey]
 }
 
-// TODO: ???
-//func (ps *solver) lessFvalElementIndex(states []puzzlestate.IPuzzleState) int {
-//	//if len(states) == 0 {
-//	//	return -1
-//	//}
-//	minFval := states[0].GetFval()
-//	index := 0
-//	for i, state := range states {
-//		currFval := state.GetFval()
-//		if minFval > currFval {
-//			minFval = currFval
-//			index = i
-//		}
-//	}
-//	return index
-//}
-
-//func (ps *solver) calcHeuristicVal(currentState, goalState puzzlestate.IPuzzleState, heuristic func(s, g puzzlestate.IPuzzleState) int) int {
-//	return heuristic(currentState, goalState) + currentState.GetLevel()
-//}
-
 // countInversions shows how the current puzzle state is close by the goal state, to the sorted array
 func (ps *solver) countInversions(initialState puzzlestate.IPuzzleState) int {
 	counter := 0
