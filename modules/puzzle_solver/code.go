@@ -1,6 +1,7 @@
 package puzzlesolver
 
 import (
+	"fmt"
 	"n-puzzle/modules/priority_queue"
 	puzzlestate "n-puzzle/modules/puzzle_state"
 	"n-puzzle/modules/utils"
@@ -107,6 +108,28 @@ func (ps *solver) ClearExploredPuzzleStates() {
 	ps.ClosedStatesKeys = ps.ClosedStatesKeys[0:0]
 }
 
+func (ps *solver) printInfo(isSolvable bool, states [][][]int, complexityInTime, complexityInSize, numberOfMoves int) {
+	if isSolvable == false {
+		fmt.Println("The current puzzle isn't solvable")
+		return
+	}
+	fmt.Println("The current puzzle is solvable")
+
+	fmt.Println("Complexity in time: ", complexityInTime)
+	fmt.Println("Complexity in size: ", complexityInSize)
+	fmt.Println("Number of moves:    ", numberOfMoves)
+	for _, state := range states {
+		for _, row := range state {
+			for _, elem := range row {
+				fmt.Print(elem)
+				fmt.Print(" ")
+			}
+			fmt.Print("\n")
+		}
+		fmt.Print("\n\n")
+	}
+}
+
 func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int) (bool, error) {
 	ps.ClearExploredPuzzleStates()
 
@@ -123,15 +146,18 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int
 		return false, nil
 	}
 
-	//fval := ps.calcHeuristicVal(initialState, goalState, heuristicFunc)
-	//initialState.SetFval(fval)
-
+	complexityInTime := 0
+	complexityInSize := 0
+	numberOfMoves := 0
+	orderedSequenceOfStates := [][][]int{}
 	openStates := priority_queue.NewQueue[puzzlestate.IPuzzleState]()
 	openStates.Push(initialState)
-
-	//var totalNumberOfStates int
-	//totalNumberOfStates += 1
+	complexityInTime += 1
+	complexityInSize = 1
 	for {
+		if openStates.Size()+len(ps.ClosedStatesMap) > complexityInSize {
+			complexityInSize = openStates.Size() + len(ps.ClosedStatesMap)
+		}
 		if openStates.Empty() == true {
 			return false, nil
 		}
@@ -140,12 +166,12 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int
 		if currentState.GetFval() == 0 {
 			list := currentState.ListOfStates()
 			for _, l := range list {
-				l.PrintPuzzle()
+				orderedSequenceOfStates = append(orderedSequenceOfStates, l.CopyMatrix())
 			}
+			ps.printInfo(true, orderedSequenceOfStates, complexityInTime, complexityInSize, numberOfMoves)
 			break
 		}
 		expandedNodes := puzzlestate.Actions(currentState, goalState, heuristicFunc)
-		//totalNumberOfStates += len(expandedNodes)
 		ps.addClosedState(currentState)
 
 		for _, node := range expandedNodes {
@@ -153,9 +179,11 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, heurictic int
 			_, ok = ps.ClosedStatesMap[encrypted]
 			if ok == false {
 				openStates.Push(node)
+				complexityInTime += 1
 			}
 		}
 		time.Sleep(2 * time.Second)
+		numberOfMoves += 1
 	}
 
 	return true, nil
