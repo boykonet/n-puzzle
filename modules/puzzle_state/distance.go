@@ -16,11 +16,11 @@ func Coordinates(array [][]int, number int) (y, x int) {
 	for y = 0; y < size; y++ {
 		for x = 0; x < size; x++ {
 			if array[y][x] == number {
-				break
+				return y, x
 			}
 		}
 	}
-	return y, x
+	return -1, -1
 }
 
 func ManhattanDistance(s, g [][]int) int {
@@ -30,9 +30,6 @@ func ManhattanDistance(s, g [][]int) int {
 	for i := 0; i < size*size; i++ {
 		y1, x1 := Coordinates(s, i)
 		y2, x2 := Coordinates(g, i)
-		if y1 == -1 || x1 == -1 || x2 == -1 || y2 == -1 {
-
-		}
 		xSteps := math.Abs(float64(x1 - x2))
 		ySteps := math.Abs(float64(y1 - y2))
 		manhattan += int(xSteps + ySteps)
