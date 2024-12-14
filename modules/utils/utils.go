@@ -2,8 +2,10 @@ package utils
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -46,4 +48,20 @@ func ReadFromFile(filename string) ([]string, error) {
 		res = append(res, str)
 	}
 	return res, nil
+}
+
+func PrintPuzzle(puzzle [][]int) {
+	size := len(puzzle)
+	lenMaxElem := len(strconv.Itoa(size*size-1)) + 2
+	for _, row := range puzzle {
+		for _, elem := range row {
+			pattern := strconv.Itoa(elem)
+			for len(pattern) < lenMaxElem {
+				pattern = " " + pattern
+			}
+			fmt.Print(pattern)
+		}
+		fmt.Print("\n")
+	}
+	fmt.Print("\n")
 }

@@ -23,7 +23,6 @@ func Result(s, g IPuzzleState, action int, heuristicFunc func(s, g [][]int) int)
 	}
 
 	utils.Swap(&childData[y0][x0], &childData[y][x])
-	// TODO: should be child Data, NOT s
 	return NewPuzzleState(childData, s.GetLevel()+1, heuristicFunc, g, s)
 }
 

@@ -2,7 +2,11 @@ package priority_queue
 
 import (
 	"container/heap"
-	"fmt"
+	"errors"
+)
+
+var (
+	ErrorEmptyQueue = errors.New("queue is empty")
 )
 
 type item[T any] struct {
@@ -63,7 +67,7 @@ func (q *PriorityQueueImpl[T]) Enqueue(value T, priority int) {
 func (q *PriorityQueueImpl[T]) Dequeue() (T, error) {
 	if q.Len() == 0 {
 		var zero T
-		return zero, fmt.Errorf("queue is empty")
+		return zero, ErrorEmptyQueue
 	}
 	elem := heap.Pop(&q.pq).(*item[T])
 	return elem.Value, nil
@@ -72,7 +76,7 @@ func (q *PriorityQueueImpl[T]) Dequeue() (T, error) {
 func (q *PriorityQueueImpl[T]) Peek() (T, error) {
 	if q.Len() == 0 {
 		var zero T
-		return zero, fmt.Errorf("queue is empty")
+		return zero, ErrorEmptyQueue
 	}
 	return q.pq[0].Value, nil
 }
@@ -80,48 +84,3 @@ func (q *PriorityQueueImpl[T]) Peek() (T, error) {
 func (q *PriorityQueueImpl[T]) Len() int {
 	return q.pq.Len()
 }
-
-//{
-//priorities := pq.ConvertPriorityToArray()
-//index := 0
-//if n > 0 {
-//	index = RightBinarySearch(priorities, 0, n-1, elem.Priority)
-//}
-//pq.Append(elem, index)
-//}
-
-//func (pq *PriorityQueue[T]) Append(element *item[T], index int) {
-//	size := len(*pq)
-//	switch index {
-//	case size - 1:
-//		*pq = append(*pq, element)
-//	case 0:
-//		if len(*pq) > 0 && (*pq)[index].Priority == element.Priority {
-//			*pq = slices.Insert(*pq, 1, element)
-//		} else {
-//			*pq = append([]*item[T]{element}, *pq...)
-//		}
-//	default:
-//		*pq = slices.Insert(*pq, index+1, element)
-//	}
-//}
-
-//func RightBinarySearch[T int](array []T, l, r int, value T) int {
-//	for l < r {
-//		m := (l + r + 1) / 2
-//		if array[m] <= value {
-//			l = m
-//		} else {
-//			r = m - 1
-//		}
-//	}
-//	return l
-//}
-
-//func (pq *PriorityQueue[T]) ConvertPriorityToArray() []int {
-//	arr := make([]int, 0, len(*pq))
-//	for _, elem := range *pq {
-//		arr = append(arr, elem.Priority)
-//	}
-//	return arr
-//}

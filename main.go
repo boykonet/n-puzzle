@@ -63,8 +63,8 @@ func main() {
 		return
 	}
 	if ok == true {
-		fmt.Println("The current puzzle is solvable")
+		fmt.Println("The current puzzle is SOLVABLE")
 	} else {
-		fmt.Println("The current puzzle isn't solvable")
+		fmt.Println("The current puzzle is NOT SOLVABLE")
 	}
 }

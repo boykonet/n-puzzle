@@ -1,0 +1,9 @@
+# This puzzle is unsolvable
+3
+4 8 1
+6 5 2
+0 7 3
+# 4 8 1 6 5 2 7 3
+# N (size) = 3 (odd)
+# inversions: 4-1, 4-2, 4-3, 8-1, 8-6, 8-5, 8-2, 8-7, 8-3, 6-5, 6-2, 6-3, 5-2, 5-3, 7-3 = 15 (odd)
+# UNSOLVABLE
