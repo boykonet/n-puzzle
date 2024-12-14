@@ -9,6 +9,11 @@ import (
 type mapParser struct {
 }
 
+var (
+	ErrorIncorrectMapSize  = errors.New("incorrect map size")
+	ErrorIncorrectMapValue = errors.New("incorrect value in the map")
+)
+
 func NewMapParser() IMapParser {
 	return &mapParser{}
 }
@@ -21,15 +26,15 @@ func (mp *mapParser) Parse(puzzleMap []string) ([][]int, error) {
 
 	size, err := strconv.Atoi(puzzleMap[0])
 	if err != nil {
-		return nil, err
+		return nil, ErrorIncorrectMapValue
 	}
 
-	// remove the map size from the map
+	// remove the map size
 	puzzleMap = puzzleMap[1:]
 
 	matrix, err := mp.ConvertToIntMatrix(puzzleMap)
 	if err != nil {
-		return nil, err
+		return nil, ErrorIncorrectMapValue
 	}
 	err = mp.Validate(matrix, size)
 	if err != nil {
@@ -38,7 +43,7 @@ func (mp *mapParser) Parse(puzzleMap []string) ([][]int, error) {
 	return matrix, nil
 }
 
-func (mp *mapParser) RemoveComments(data []string) /*[]string*/ {
+func (mp *mapParser) RemoveComments(data []string) {
 	for i, str := range data {
 		index := strings.Index(str, "#")
 		if index == -1 {
@@ -48,9 +53,9 @@ func (mp *mapParser) RemoveComments(data []string) /*[]string*/ {
 	}
 }
 
-func (mp *mapParser) TrimRows(puzzleMap []string) /*[]string*/ {
+func (mp *mapParser) TrimRows(puzzleMap []string) {
 	for index, row := range puzzleMap {
-		row = strings.Trim(row, " ")
+		row = strings.Trim(row, " \n")
 		puzzleMap[index] = row
 	}
 }
@@ -91,11 +96,6 @@ func (mp *mapParser) ConvertToIntMatrix(puzzleMap []string) ([][]int, error) {
 	}
 	return matrix, nil
 }
-
-var (
-	ErrorIncorrectMapSize  = errors.New("incorrect map size")
-	ErrorIncorrectMapValue = errors.New("incorrect value in the map")
-)
 
 func (mp *mapParser) Validate(puzzleMap [][]int, size int) error {
 	if len(puzzleMap) != size {

@@ -21,7 +21,7 @@ var coordCorrection = map[int]struct{ X, Y int }{
 	SwapDown:  {X: 0, Y: 1},
 }
 
-var actions = []int{SwapLeft, SwapDown, SwapUp, SwapDown}
+var actions = []int{SwapLeft, SwapRight, SwapUp, SwapDown}
 
 type state struct {
 	Data   [][]int
@@ -114,13 +114,12 @@ func (s *state) Coordinates(number int) (y int, x int, e error) {
 	return -1, -1, fmt.Errorf("Incorrect number: %v", number)
 }
 
-func (s *state) ListOfStates() []IPuzzleState {
-	list := make([]IPuzzleState, 0)
+func (s *state) ListOfStates() [][][]int {
+	nodes := make([][][]int, 0)
 	if s.Parent != nil {
-		s.Parent.ListOfStates()
+		nodes = s.Parent.ListOfStates()
 	}
-	list = append(list, s)
-	return list
+	return append(nodes, s.CopyMatrix())
 }
 
 func (s *state) PrintPuzzle() {

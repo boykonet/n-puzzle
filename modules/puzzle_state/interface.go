@@ -10,5 +10,5 @@ type IPuzzleState interface {
 	PrintPuzzle()
 	Coordinates(number int) (y int, x int, e error)
 	CopyMatrix() [][]int
-	ListOfStates() []IPuzzleState
+	ListOfStates() [][][]int
 }

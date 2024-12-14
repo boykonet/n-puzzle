@@ -4,6 +4,7 @@ import (
 	"fmt"
 	parser "n-puzzle/modules/parser"
 	puzzleSolver "n-puzzle/modules/puzzle_solver"
+	puzzlestate "n-puzzle/modules/puzzle_state"
 	"n-puzzle/modules/utils"
 )
 
@@ -48,17 +49,22 @@ func main() {
 		fmt.Print(err)
 		return
 	}
+	hFunc, ok := puzzlestate.DistanceFunctionNames[heuristic]
+	if ok == false {
+		fmt.Println(utils.ErrorHeuristic)
+	}
+
 	fmt.Println("start puzzle: ", startPuzzle)
 
 	puzzleSolver := puzzleSolver.NewPuzzleSolver()
-	ok, err := puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)), heuristic)
+	ok, err = puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)), hFunc)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	if ok == true {
-		fmt.Println("The current puzzle is solvable")
+		fmt.Println("The current puzzle is SOLVABLE")
 	} else {
-		fmt.Println("The current puzzle isn't solvable")
+		fmt.Println("The current puzzle is NOT SOLVABLE")
 	}
 }

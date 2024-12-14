@@ -22,8 +22,7 @@ func Result(s, g IPuzzleState, action int, heuristicFunc func(s, g [][]int) int)
 		return nil
 	}
 
-	utils.Swap(&childData[x0][y0], &childData[x][y])
-	// TODO: should be child Data, NOT s
+	utils.Swap(&childData[y0][x0], &childData[y][x])
 	return NewPuzzleState(childData, s.GetLevel()+1, heuristicFunc, g, s)
 }
 
@@ -31,7 +30,7 @@ func Result(s, g IPuzzleState, action int, heuristicFunc func(s, g [][]int) int)
 func Actions(s, g IPuzzleState, heuristicFunc func(s, g [][]int) int) []IPuzzleState {
 	states := make([]IPuzzleState, 0, 4)
 
-	for action, _ := range actions {
+	for _, action := range actions {
 		newState := Result(s, g, action, heuristicFunc)
 		if newState != nil {
 			states = append(states, newState)
