@@ -58,18 +58,31 @@ func ReadFromFile(filename string) ([]string, error) {
 	return res, nil
 }
 
-func PrintPuzzle(puzzle [][]int) {
+func ConvertPuzzleToArrayOfStrings(puzzle [][]int) []string {
+	convertedPuzzle := make([]string, 0)
+
 	size := len(puzzle)
 	lenMaxElem := len(strconv.Itoa(size*size-1)) + 2
-	for _, row := range puzzle {
+	for index, row := range puzzle {
+		convertedPuzzle = append(convertedPuzzle, "")
 		for _, elem := range row {
 			pattern := strconv.Itoa(elem)
 			for len(pattern) < lenMaxElem {
 				pattern = " " + pattern
 			}
-			fmt.Print(pattern)
+			convertedPuzzle[index] += pattern
 		}
-		fmt.Print("\n")
+		convertedPuzzle[index] += "\n"
 	}
-	fmt.Print("\n")
+	return convertedPuzzle
+}
+
+func CreateDirectories(dirPath string) error {
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(dirPath, 0700)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

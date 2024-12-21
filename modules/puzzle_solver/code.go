@@ -1,10 +1,12 @@
 package puzzlesolver
 
 import (
-	"fmt"
 	"n-puzzle/modules/priority_queue"
 	puzzlestate "n-puzzle/modules/puzzle_state"
 	"n-puzzle/modules/utils"
+	"os"
+	"strconv"
+	"strings"
 )
 
 type solver struct {
@@ -89,22 +91,68 @@ func (ps *solver) Clear() {
 	ps.NumberOfMoves = 0
 }
 
-func (ps *solver) printInfo(isSolvable bool) {
+func (ps *solver) ConvertPuzzleInfoIntoString(initialState [][]int, isSolvable bool) string {
+	info := ""
+	for _, row := range utils.ConvertPuzzleToArrayOfStrings(initialState) {
+		info += row
+	}
 	if isSolvable == false {
-		fmt.Println("Puzzle is NOT SOLVABLE")
-		return
+		info += "Puzzle is NOT SOLVABLE\n"
+		return info
 	}
-	fmt.Println("Puzzle is SOLVABLE")
+	info += "Puzzle is SOLVABLE\n\n"
 
-	fmt.Println("Complexity in time: ", ps.ComplexityInTime)
-	fmt.Println("Complexity in size: ", ps.ComplexityInSize)
-	fmt.Println("Number of moves:    ", ps.NumberOfMoves)
-	for _, state := range ps.OrderedSequenceOfStates {
-		utils.PrintPuzzle(state)
-	}
+	info += "Complexity in time: " + strconv.Itoa(ps.ComplexityInTime) + "\n"
+	info += "Complexity in size: " + strconv.Itoa(ps.ComplexityInSize) + "\n"
+	info += "Number of moves:    " + strconv.Itoa(ps.NumberOfMoves) + "\n"
+	return info
 }
 
-func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, hFunction func(s, g [][]int) int) (bool, error) {
+func (ps *solver) WriteToFile(initialState [][]int, filepath string, isSolvable bool) error {
+	dirPathIndex := strings.LastIndex(filepath, "/")
+	dirPath := filepath[0:dirPathIndex]
+	// Create the output file directory of not exists
+	err := utils.CreateDirectories(dirPath)
+	if err != nil {
+		return err
+	}
+
+	// Get complexity, number of moves, etc. and convert it into the string
+	info := ps.ConvertPuzzleInfoIntoString(initialState, isSolvable)
+
+	// If the file doesn't exist, create it, or append to the file
+	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		return err
+	}
+
+	// Write complexity, number of moves, etc. into the file
+	_, err = f.Write([]byte(info))
+	if err != nil {
+		_ = f.Close()
+		return err
+	}
+
+	// Write puzzle states into the file
+	for _, state := range ps.OrderedSequenceOfStates {
+		convertedPuzzle := utils.ConvertPuzzleToArrayOfStrings(state)
+		convertedPuzzle = append(convertedPuzzle, "\n")
+		for _, row := range convertedPuzzle {
+			_, err = f.Write([]byte(row))
+			if err != nil {
+				_ = f.Close()
+				return err
+			}
+		}
+	}
+	err = f.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, hFunction func(s, g [][]int) int, outputFilePath string) (bool, error) {
 	ps.Clear()
 
 	goalState := puzzlestate.NewPuzzleState(goalStateArray, 0, nil, nil, nil)
@@ -112,7 +160,8 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, hFunction fun
 
 	// Check if the initial state is solvable
 	if ps.ifSolvable(initialState) == false {
-		return false, nil
+		err := ps.WriteToFile(initialState.CopyMatrix(), outputFilePath, false)
+		return false, err
 	}
 
 	openStates := priority_queue.NewPriorityQueue[puzzlestate.IPuzzleState]()
@@ -133,7 +182,10 @@ func (ps *solver) Solve(initialStateArray, goalStateArray [][]int, hFunction fun
 		if currentState.GetFval() == 0 {
 			ps.OrderedSequenceOfStates = currentState.ListOfStates()
 			ps.NumberOfMoves = len(ps.OrderedSequenceOfStates)
-			ps.printInfo(true)
+			err = ps.WriteToFile(initialState.CopyMatrix(), outputFilePath, true)
+			if err != nil {
+				return false, err
+			}
 			return true, nil
 		}
 		expandedNodes := puzzlestate.Actions(currentState, goalState, hFunction)

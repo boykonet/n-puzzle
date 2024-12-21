@@ -3,9 +3,15 @@ package main
 import (
 	"fmt"
 	parser "n-puzzle/modules/parser"
-	puzzleSolver "n-puzzle/modules/puzzle_solver"
+	puzzlesolver "n-puzzle/modules/puzzle_solver"
 	puzzlestate "n-puzzle/modules/puzzle_state"
 	"n-puzzle/modules/utils"
+	"os"
+	"strings"
+)
+
+const (
+	outputDirectoryName = "./output/"
 )
 
 func ReadAndParseMap() ([][]int, int, error) {
@@ -54,10 +60,17 @@ func main() {
 		fmt.Println(utils.ErrorHeuristic)
 	}
 
-	fmt.Println("start puzzle: ", startPuzzle)
+	fmt.Println("Start puzzle: ", startPuzzle)
 
-	puzzleSolver := puzzleSolver.NewPuzzleSolver()
-	ok, err = puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)), hFunc)
+	// Create the path for output file
+	outputFilePath := os.Args[1]
+	outputFilePath = strings.Trim(outputFilePath, "./")
+
+	outputFilePath = outputDirectoryName + outputFilePath
+
+	// Create the puzzle solver object
+	puzzleSolver := puzzlesolver.NewPuzzleSolver()
+	ok, err = puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)), hFunc, outputFilePath)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -67,4 +80,5 @@ func main() {
 	} else {
 		fmt.Println("The current puzzle is NOT SOLVABLE")
 	}
+	fmt.Println("You can find the information into the", outputFilePath)
 }
