@@ -29,6 +29,13 @@ clean:
 	@go clean
 	@echo "Clean complete"
 
-re: clean build
+fclean: clean
+	@echo "Performing full clean..."
+	@go clean -modcache
+	@echo "Full clean complete"
+
+re: fclean build
+
+all: build
 
 .PHONY: build clean deps build-linux build-macos
