@@ -6,10 +6,22 @@ BUILD_DIR=.
 LDFLAGS=-ldflags "-X main.version=$(VERSION)"
 export GO111MODULE=on
 
+build: deps build-macos
+
 deps:
 	@echo "Installing dependencies..."
 	@go mod tidy
 	@go mod download
+
+build-macos:
+	@echo "Building for macOS..."
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
+	@echo "macOS build complete: $(BUILD_DIR)/$(BINARY_NAME)"
+
+build-linux:
+	@echo "Building for Linux..."
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
+	@echo "Linux build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
 clean:
 	@echo "Cleaning up..."
@@ -17,16 +29,6 @@ clean:
 	@go clean
 	@echo "Clean complete"
 
-build-linux:
-	@echo "Building for Linux..."
-	@mkdir -p $(BUILD_DIR)
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
-	@echo "Linux build complete: $(BUILD_DIR)/$(BINARY_NAME)"
-
-build-macos:
-	@echo "Building for macOS..."
-	@mkdir -p $(BUILD_DIR)
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
-	@echo "macOS build complete: $(BUILD_DIR)/$(BINARY_NAME)"
+re: clean build
 
 .PHONY: build clean deps build-linux build-macos
