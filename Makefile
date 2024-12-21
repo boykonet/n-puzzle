@@ -8,6 +8,8 @@ export GO111MODULE=on
 
 build: deps build-macos
 
+all: build
+
 deps:
 	@echo "Installing dependencies..."
 	@go mod tidy
@@ -35,7 +37,5 @@ fclean: clean
 	@echo "Full clean complete"
 
 re: fclean build
-
-all: build
 
 .PHONY: build clean deps build-linux build-macos
