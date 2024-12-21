@@ -30,10 +30,10 @@ var HeuristicNames = map[string]int{
 
 var (
 	// ErrorIncorrectMap Incorrect map
-	ErrorIncorrectMap = errors.New("Incorrect map")
+	ErrorIncorrectMap = errors.New("incorrect map")
 	// ErrorIncorrectAmountOfRows Incorrect amount of rows
-	ErrorIncorrectAmountOfRows    = errors.New("Incorrect amount of rows")
-	ErrorIncorrectAmountOfColumns = errors.New("Incorrect amount of columns")
+	ErrorIncorrectAmountOfRows    = errors.New("incorrect amount of rows")
+	ErrorIncorrectAmountOfColumns = errors.New("incorrect amount of columns")
 	// ErrorIncorrectFileExtension Incorrect file extension (.txt)
 	ErrorIncorrectFileExtension = errors.New("Incorrect file extension.\nSupported name is .txt")
 

@@ -111,7 +111,7 @@ func (s *state) Coordinates(number int) (y int, x int, e error) {
 			}
 		}
 	}
-	return -1, -1, fmt.Errorf("Incorrect number: %v", number)
+	return -1, -1, fmt.Errorf("incorrect number: %v", number)
 }
 
 func (s *state) ListOfStates() [][][]int {

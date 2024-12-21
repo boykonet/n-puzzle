@@ -12,6 +12,7 @@ type mapParser struct {
 var (
 	ErrorIncorrectMapSize  = errors.New("incorrect map size")
 	ErrorIncorrectMapValue = errors.New("incorrect value in the map")
+	ErrorEmptyFile         = errors.New("empty file")
 )
 
 func NewMapParser() IMapParser {
@@ -21,8 +22,14 @@ func NewMapParser() IMapParser {
 // Parse TODO: doesn't work with the map without empty line in the end of the map
 func (mp *mapParser) Parse(puzzleMap []string) ([][]int, error) {
 	mp.RemoveComments(puzzleMap)
-	puzzleMap = mp.RemoveEmptyStrings(puzzleMap)
 	mp.TrimRows(puzzleMap)
+	puzzleMap = mp.RemoveEmptyStrings(puzzleMap)
+
+	// The len of the array is checking after RemoveComments(..),
+	// RemoveEmptyString(...) and TrimRow(...) for removing unnecessary information from the file
+	if len(puzzleMap) == 0 {
+		return nil, ErrorEmptyFile
+	}
 
 	size, err := strconv.Atoi(puzzleMap[0])
 	if err != nil {

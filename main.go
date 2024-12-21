@@ -46,7 +46,7 @@ func generateGoalStateMatrix(size int) [][]int {
 func main() {
 	startPuzzle, heuristic, err := ReadAndParseMap()
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println("Error:", err)
 		return
 	}
 	hFunc, ok := puzzlestate.DistanceFunctionNames[heuristic]
@@ -59,7 +59,7 @@ func main() {
 	puzzleSolver := puzzleSolver.NewPuzzleSolver()
 	ok, err = puzzleSolver.Solve(startPuzzle, generateGoalStateMatrix(len(startPuzzle)), hFunc)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error:", err)
 		return
 	}
 	if ok == true {

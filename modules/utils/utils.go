@@ -30,6 +30,14 @@ func Swap[T int](first *T, second *T) {
 func ReadFromFile(filename string) ([]string, error) {
 	var res []string
 
+	stat, err := os.Stat(filename)
+	if err != nil {
+		return nil, err
+	}
+	if stat.IsDir() == true {
+		return nil, fmt.Errorf("the file is a directory")
+	}
+
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
